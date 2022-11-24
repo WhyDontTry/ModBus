@@ -7,7 +7,7 @@
 ** Как использовать:
 **** 1.Master
 ****** Вызов конфигурации ModBus_setup
-****** Вызовите ModBus_readByteFromOuter в функции прерывания приема последовательного порта
+****** Вызовите ModBus_readbyteFromOuter в функции прерывания приема последовательного порта
 ****** Циклический вызов ModBus_Master_loop
 ****** Вызовите ModBus_getRegister для считывания значения регистров целевого устройства
 ****** Вызовите ModBus_setRegister для записи одного регистра целевого устройства
@@ -59,12 +59,9 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
-typedef unsigned char byte;
-typedef unsigned char u8;
-typedef unsigned int u32;
 
 // TODO: функция для получения системного времени в миллисекундах.
-int millis();
+uint32_t millis();
 
 typedef enum {
 	ASCII,
@@ -80,21 +77,21 @@ typedef enum {
 typedef struct _MODBUS_SETTING_T { // Тип для конфигурации экземпляра ModBus
 	uint8_t address; // Адрес целевого устройства
 	MODBUS_MODE_TYPE frameType; // Режим работы: ASCII/RTU
-	u32 baudRate; // Скорость передачи данных, например 9600 или 115200 и т.д.
-	u8 register_access_limit; // Максимальное количество регистров чтения/записи одновременно
-	void(*sendHandler)(byte*, size_t); // Функция, используемая для отправки данных, параметры функции: (byte* data, size_t size), data - адрес массива данных, size - его размер
+	uint32_t baudRate; // Скорость передачи данных, например 9600 или 115200 и т.д.
+	uint8_t register_access_limit; // Максимальное количество регистров чтения/записи одновременно
+	void(*sendHandler)(uint8_t*, size_t); // Функция, используемая для отправки данных, параметры функции: (uint8_t* data, size_t size), data - адрес массива данных, size - его размер
 } ModBus_Setting_T;
 
 typedef struct _MODBUS_FRAME_T {
-	u8 index; // Номер команды
-	byte data[MODBUS_BUFFER_SIZE + 2]; // Данные, выделенные двумя дополнительными байтами для безопасности
-	u8 size; // Размер данных
+	uint8_t index; // Номер команды
+	uint8_t data[MODBUS_BUFFER_SIZE + 2]; // Данные, выделенные двумя дополнительными байтами для безопасности
+	uint8_t size; // Размер данных
 	MODBUS_FUNCTION_TYPE type; // Тип команды
-	u32 time; // Время начала выполнения команды
+	uint32_t time; // Время начала выполнения команды
 	void* responseHandler; // Указатель на функцию обратного вызова в конце выполнения инструкции
-	u8 responseSize; // Длина возвращаемого кадра
+	uint8_t responseSize; // Длина возвращаемого кадра
 	uint16_t address; // Адрес регистра доступа
-	u8 count; // Количество регистров доступа
+	uint8_t count; // Количество регистров доступа
 } MODBUS_FRAME_T;
 
 typedef void(*GetReponseHandler_T)(uint16_t*, uint16_t); // Тип указателя функции обратного вызова регистра чтения, параметры функции возврата: (первый адрес буфера значений регистра, количество регистров)
@@ -103,37 +100,37 @@ typedef void(*SetReponseHandler_T)(uint16_t, uint16_t); // Тип указате
 typedef struct __MODBUS_Parameter {
 	uint8_t m_address; // Адрес Slave устройства
 	MODBUS_MODE_TYPE m_modeType; // Режим работы протокола: ASCII / RTU
-	byte m_receiveFrameBuffer[MODBUS_BUFFER_SIZE + 2]; // Получение пакетов, выделение двух дополнительных байтов для безопасности
+	uint8_t m_receiveFrameBuffer[MODBUS_BUFFER_SIZE + 2]; // Получение пакетов, выделение двух дополнительных байтов для безопасности
 	size_t m_receiveFrameBufferLen;  // Количество принятых байтов данных
 
-	volatile byte m_receiveBufferTmp[MODBUS_BUFFER_SIZE + 2]; // Временно хранящиеся данные приема, так как эта переменная изменяется функцией прерывания, поэтому используйте круговой доступ, чтобы избежать изменения этой переменной вне функции прерывания
-	volatile byte* m_pBeginReceiveBufferTmp; // Начальное положение области циклического доступа
-	volatile byte* m_pEndReceiveBufferTmp; // Следующая позиция в конце круговой зоны доступа
-	byte m_hasDetectedBufferStart;
+	volatile uint8_t m_receiveBufferTmp[MODBUS_BUFFER_SIZE + 2]; // Временно хранящиеся данные приема, так как эта переменная изменяется функцией прерывания, поэтому используйте круговой доступ, чтобы избежать изменения этой переменной вне функции прерывания
+	volatile uint8_t* m_pBeginReceiveBufferTmp; // Начальное положение области циклического доступа
+	volatile uint8_t* m_pEndReceiveBufferTmp; // Следующая позиция в конце круговой зоны доступа
+	uint8_t m_hasDetectedBufferStart;
 
 	uint16_t m_registerData[MODBUS_REGISTER_LIMIT + 2]; // Данные регистров чтения кэша
 	uint16_t m_registerCount;
-	u8 m_registerAcessLimit;
+	uint8_t m_registerAcessLimit;
 
-	volatile u32 m_lastReceivedTime; // Момент последнего получения байта данных
-	u32 m_lastSentTime; // Момент последней отправки данных
-	u32 m_receiveTimeout; // Установка таймаута ожидания приема следующего символа
-	u32 m_sendTimeout; // Установака тайм-аута для ожидания обратного кадра
+	volatile uint32_t m_lastReceivedTime; // Момент последнего получения байта данных
+	uint32_t m_lastSentTime; // Момент последней отправки данных
+	uint32_t m_receiveTimeout; // Установка таймаута ожидания приема следующего символа
+	uint32_t m_sendTimeout; // Установака тайм-аута для ожидания обратного кадра
 
-	byte m_faston; // Включение или выключение быстрого режима
+	uint8_t m_faston; // Включение или выключение быстрого режима
 
-	void(*m_SendHandler)(byte*, size_t); // Функция отправки данных, используется для передачи данных на внешние устройства
+	void(*m_SendHandler)(uint8_t*, size_t); // Функция отправки данных, используется для передачи данных на внешние устройства
 
 #ifdef MODBUS_MASTER // Master
 	MODBUS_FRAME_T m_sendFrames[MODBUS_WAITFRAME_N + 2]; // Очередь отправки пакетов
 	size_t m_sendFramesN; // Длина очереди отправляемых пакетов
-	u8 m_nextFrameIndex; // Порядковый номер следующего пакета
-	byte m_waitingResponse; // Ожидание ответного кадра
+	uint8_t m_nextFrameIndex; // Порядковый номер следующего пакета
+	uint8_t m_waitingResponse; // Ожидание ответного кадра
 #endif // MODBUS_MASTER
 
 #ifdef MODBUS_SLAVE // Slave
-	byte m_sendFrameBuffer[MODBUS_BUFFER_SIZE];
-	u8 m_sendFrameBufferLen;
+	uint8_t m_sendFrameBuffer[MODBUS_BUFFER_SIZE];
+	uint8_t m_sendFrameBufferLen;
 
 	size_t(*m_GetRegisterHandler)(uint16_t, uint16_t, uint16_t*); // Функция считывания регистра, параметры функции (первый адрес регистра, количество регистров, считанные данные), возвращает количество успешных считываний
 	size_t(*m_SetRegisterHandler)(uint16_t, uint16_t, uint16_t*); // Установить функцию регистра, параметры функции (адрес регистра, количество записей, записанные данные), вернуть количество успешных установок
@@ -144,15 +141,15 @@ typedef struct __MODBUS_Parameter {
 
 /************ Внешний интерфейс BEGIN ***********/
 void ModBus_setup(ModBus_parameter* ModBus_para, ModBus_Setting_T setting); // Конфигурирование экземпляров ModBus
-void ModBus_readByteFromOuter(ModBus_parameter* ModBus_para, byte receivedByte); // Передача байтовых данных в протокол ModBus
-void ModBus_fastMode(ModBus_parameter* ModBus_para, byte faston); // Следует ли включать режим быстрой команды, быстрый режим не кэширует инструкцию, выключение быстрого режима может гарантировать выполнение инструкции, но может возникнуть задержка
+void ModBus_readuint8_tFromOuter(ModBus_parameter* ModBus_para, uint8_t receiveduint8_t); // Передача байтовых данных в протокол ModBus
+void ModBus_fastMode(ModBus_parameter* ModBus_para, uint8_t faston); // Следует ли включать режим быстрой команды, быстрый режим не кэширует инструкцию, выключение быстрого режима может гарантировать выполнение инструкции, но может возникнуть задержка
 
 /** Настройка скорости отправки и приема данных **/
 /*** Параметры ***
 ** baud: Скорость передачи и приема данных
 ** Примечание: Можно не устанавливать, используйте тайм-аут по умолчанию (скорость передачи данных 9600 совместима, скорость передачи данных выше 9600 можно не устанавливать, ниже необходимо установить).
 ***/
-void ModBus_setBitRate(ModBus_parameter* ModBus_para, u32 baud);
+void ModBus_setBitRate(ModBus_parameter* ModBus_para, uint32_t baud);
 
 /** Установка тайм-аута приема **/
 /*** Параметры ***
@@ -160,7 +157,7 @@ void ModBus_setBitRate(ModBus_parameter* ModBus_para, u32 baud);
 ** sendTimeout: Тайм-аут для ожидания обратного кадра после передачи, определяется скоростью последовательного порта
 ** Примечание: Можно не устанавливать, используйте тайм-аут по умолчанию (скорость передачи данных 9600 совместима, скорость передачи данных выше 9600 можно не устанавливать, ниже необходимо установить).
 ***/
-void ModBus_setTimeout(ModBus_parameter* ModBus_para, u32 receiveTimeout, u32 sendTimeout);
+void ModBus_setTimeout(ModBus_parameter* ModBus_para, uint32_t receiveTimeout, uint32_t sendTimeout);
 
 
 #ifdef MODBUS_MASTER // ModBus Master
@@ -174,7 +171,7 @@ void ModBus_Master_loop(ModBus_parameter* ModBus_para);
 ** GetReponseHandler: Функция обратного вызова для чтения результатов, входящие параметры(uint16_t* buff, uint16_t buffLen),неудачное считывание входящих параметров (0,0)
 ** Возвращает серийный номер команды (больше 0), чтобы определить, какая команда была выполнена в функции обратного вызова, и возвращает 0, если она не может быть отправлена.
 ***/
-byte ModBus_getRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_t count, void(*GetReponseHandler)(uint16_t*, uint16_t));
+uint8_t ModBus_getRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_t count, void(*GetReponseHandler)(uint16_t*, uint16_t));
 
 /** Запись одного регистра **/
 /*** Параметры ***
@@ -183,7 +180,7 @@ byte ModBus_getRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_
 ** SetReponseHandler: Функция обратного вызова результата записи, входящие параметры(uint16_t address, uint16_t count), параметры включают в себя первый адрес и количество регистров, а время ожидания команды записи передается в параметрах (0,0).
 ** Возвращает серийный номер команды (больше 0), чтобы определить, какая команда была выполнена в функции обратного вызова, и возвращает 0, если она не может быть отправлена.
 ***/
-byte ModBus_setRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_t data, void(*SetReponseHandler)(uint16_t, uint16_t));
+uint8_t ModBus_setRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_t data, void(*SetReponseHandler)(uint16_t, uint16_t));
 
 /** Запись нескольких регистров **/
 /*** Параметры ***
@@ -193,7 +190,7 @@ byte ModBus_setRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_
 ** SetReponseHandler: Функция обратного вызова результата записи, входящие параметры(uint16_t address, uint16_t count), параметры включают в себя первый адрес и количество регистров, а время ожидания команды записи передается в параметрах (0,0).
 ** Возвращает серийный номер команды (больше 0), чтобы определить, какая команда была выполнена в функции обратного вызова, и возвращает 0, если она не может быть отправлена.
 ***/
-byte ModBus_setRegisters(ModBus_parameter* ModBus_para, uint16_t address, uint16_t* data, uint16_t count, void(*SetReponseHandler)(uint16_t, uint16_t));
+uint8_t ModBus_setRegisters(ModBus_parameter* ModBus_para, uint16_t address, uint16_t* data, uint16_t count, void(*SetReponseHandler)(uint16_t, uint16_t));
 
 #endif
 

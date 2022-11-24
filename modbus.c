@@ -5,7 +5,7 @@
 /*** Параметры ***
 ** address: Адрес устройства
 ** frameType: Режим протокола
-** sendHandler: Внешний интерфейс для передачи данных, например, привязка к функции отправки через последовательный порт, входящие параметры(byte* buff, size_t buffLen), параметры включают указатель данных и длину данных
+** sendHandler: Внешний интерфейс для передачи данных, например, привязка к функции отправки через последовательный порт, входящие параметры(uint8_t* buff, size_t buffLen), параметры включают указатель данных и длину данных
 ***/
 void ModBus_setup( ModBus_parameter* ModBus_para, ModBus_Setting_T setting)
 {
@@ -59,7 +59,7 @@ void ModBus_setup( ModBus_parameter* ModBus_para, ModBus_Setting_T setting)
 ** baud: Скорость передачи и приема данных
 ** Примечание: Можно не устанавливать, используйте тайм-аут по умолчанию (скорость передачи данных 9600 совместима, скорость передачи данных выше 9600 можно не устанавливать, ниже необходимо установить).
 ***/
-void ModBus_setBitRate(ModBus_parameter* ModBus_para, u32 baud)
+void ModBus_setBitRate(ModBus_parameter* ModBus_para, uint32_t baud)
 {
 	if (baud > 0)
 	{
@@ -74,7 +74,7 @@ void ModBus_setBitRate(ModBus_parameter* ModBus_para, u32 baud)
 ** sendTimeout: Тайм-аут для ожидания обратного кадра после передачи, определяется скоростью последовательного порта
 ** Примечание: Можно не устанавливать, используя тайм-аут по умолчанию.
 ***/
-void ModBus_setTimeout(ModBus_parameter* ModBus_para, u32 receiveTimeout, u32 sendTimeout)
+void ModBus_setTimeout(ModBus_parameter* ModBus_para, uint32_t receiveTimeout, uint32_t sendTimeout)
 {
 	if (receiveTimeout > 0)
 		ModBus_para->m_receiveTimeout = receiveTimeout;
@@ -86,7 +86,7 @@ void ModBus_setTimeout(ModBus_parameter* ModBus_para, u32 receiveTimeout, u32 se
 // Calculate CRC for outcoming buffer
 // and place it to end.
 // return total length
-static size_t GenCRC16(byte* buff, size_t len)
+static size_t GenCRC16(uint8_t* buff, size_t len)
 {
 	uint16_t crc = 0xFFFF;
 	uint16_t pos = 0;
@@ -120,7 +120,7 @@ static size_t GenCRC16(byte* buff, size_t len)
 // В режиме RTU контрольная сумма CRC вычисляется, учитывая начальное значение
 // Calculate CRC fro incoming buffer
 // Return 1 - if CRC is correct, overwise return 0
-static byte CheckCRC16(byte* buff, size_t len)
+static uint8_t CheckCRC16(uint8_t* buff, size_t len)
 {
 	uint16_t crc = 0xFFFF;
 	uint16_t pos = 0;
@@ -157,7 +157,7 @@ static byte CheckCRC16(byte* buff, size_t len)
 }
 
 // В режиме ASCII генерируется контрольная сумма LRC, которая добавляется в конец данных.
-static size_t GenLRC(byte* buff, size_t len)
+static size_t GenLRC(uint8_t* buff, size_t len)
 {
 	size_t i = len;
 	uint8_t uchLRC = 0; /* Инициализация байта LRC */
@@ -169,8 +169,8 @@ static size_t GenLRC(byte* buff, size_t len)
 	return len + 1;
 }
 
-// В режиме ASCII проверяется контрольный разряд LRC,
-static uint8_t CheckLRC(byte* buff, size_t len)
+// В режиме ASCII проверяется контрольная сумма LRC,
+static uint8_t CheckLRC(uint8_t* buff, size_t len)
 {
 	uint8_t uchLRC = 0; /* Инициализация байта LRC */
 	uint8_t LRC1 = buff[--len];
@@ -187,19 +187,19 @@ static uint8_t CheckLRC(byte* buff, size_t len)
 }
 
 // В режиме ASCII входящая строка преобразуется в двоичные байты
-static size_t char2bin(byte* buff, size_t len)
+static size_t char2bin(uint8_t* buff, size_t len)
 {
 	size_t binInd = 0;
 	for (size_t i = 0; i < len; i++)
 	{
-		byte bin = 0, chr = buff[i];
+		uint8_t bin = 0, chr = buff[i];
 		if ((chr >= '0') && (chr <= '9'))
 		{
-			bin = (byte)(chr - '0');
+			bin = (uint8_t)(chr - '0');
 		}
 		else if ((chr >= 'A') && (chr <= 'F'))
 		{
-			bin = (byte)(chr - 'A' + 0x0A);
+			bin = (uint8_t)(chr - 'A' + 0x0A);
 		}
 		if (i % 2 == 0)
 		{
@@ -215,7 +215,7 @@ static size_t char2bin(byte* buff, size_t len)
 }
 
 // Режим ASCII, двоичное преобразование байтов в строку, для отправки
-static size_t bin2char_s(byte* buff, size_t len, size_t maxLen)
+static size_t bin2char_s(uint8_t* buff, size_t len, size_t maxLen)
 {
 	size_t binLen = len * 2;
 	size_t ret = binLen;
@@ -227,7 +227,7 @@ static size_t bin2char_s(byte* buff, size_t len, size_t maxLen)
 	{
 		for (int i = 0; i < 2; i++)
 		{
-			byte bin = (buff[len] >> 4 * i) & 0x0F;
+			uint8_t bin = (buff[len] >> 4 * i) & 0x0F;
 			char chr = 0;
 			if ((bin >= 0) && (bin <= 9))
 			{
@@ -269,16 +269,16 @@ static MODBUS_FRAME_T* addFrame(ModBus_parameter* ModBus_para)
 
 
 // Получение байтовых данных по протоколу ModBus, обычно вызывается в функциях прерывания (например, прерывание приема последовательного порта).
-void ModBus_readByteFromOuter(ModBus_parameter* ModBus_para, byte receivedByte)
+void ModBus_readuint8_tFromOuter(ModBus_parameter* ModBus_para, uint8_t receiveduint8_t)
 {
 #ifdef _UNIT_TEST
-	printf("address %02x read byte: %02x\n", ModBus_para->m_address, receivedByte);
+	printf("address %02x read uint8_t: %02x\n", ModBus_para->m_address, receiveduint8_t);
 #endif // _UNIT_TEST
 
 	/*** Значение ModBus_para->m_pBeginReceiveBufferTmp не может быть изменено внутри этой функции!!!!!!!!!!!!!
 	**** Значение ModBus_para->m_pEndReceiveBufferTmp не может быть изменено вне этой функции!!!!!!!!!!!!!!!
 	**** Избегайте конфликтов при записи в память и обеспечивайте целостность данных***/
-	*ModBus_para->m_pEndReceiveBufferTmp = receivedByte;
+	*ModBus_para->m_pEndReceiveBufferTmp = receiveduint8_t;
 	if (ModBus_para->m_pEndReceiveBufferTmp >= ModBus_para->m_receiveBufferTmp + MODBUS_BUFFER_SIZE - 1)
 	{
 		ModBus_para->m_pEndReceiveBufferTmp = ModBus_para->m_receiveBufferTmp;
@@ -298,19 +298,19 @@ void ModBus_readByteFromOuter(ModBus_parameter* ModBus_para, byte receivedByte)
 	ModBus_para->m_lastReceivedTime = millis();
 }
 
-void ModBus_fastMode(ModBus_parameter* ModBus_para, byte faston)
+void ModBus_fastMode(ModBus_parameter* ModBus_para, uint8_t faston)
 {
 	ModBus_para->m_faston = faston;
 }
 
 
 // Проверка входящих пакетов, возвращает 1, если есть достоверные данные, в противном случае возвращает 0
-static byte ModBus_detectFrame(ModBus_parameter* ModBus_para, size_t* restSize)
+static uint8_t ModBus_detectFrame(ModBus_parameter* ModBus_para, size_t* restSize)
 {
 	size_t i = 0, j = 0;
-	byte* pEnd, *pBegin;
+	uint8_t* pEnd, *pBegin;
 	size_t lenBufferTmp;
-	u8 frameSize = 0;
+	uint8_t frameSize = 0;
 
 #ifdef MODBUS_MASTER
 	if (ModBus_para->m_sendFramesN > 0)
@@ -425,7 +425,7 @@ static byte ModBus_detectFrame(ModBus_parameter* ModBus_para, size_t* restSize)
 	}
 	case RTU:
 	{
-		byte isTimeout = 0;
+		uint8_t isTimeout = 0;
 		if (lenBufferTmp == 0) // Данные не получены из-за тайм-аута приема
 		{
 			isTimeout = 1;
@@ -458,8 +458,11 @@ static byte ModBus_detectFrame(ModBus_parameter* ModBus_para, size_t* restSize)
 			}
 			else
 			{
-				memcpy(ModBus_para->m_receiveFrameBuffer + ModBus_para->m_receiveFrameBufferLen, pBegin, (size_t)MODBUS_BUFFER_SIZE - (pBegin - ModBus_para->m_receiveBufferTmp));
-				memcpy(ModBus_para->m_receiveFrameBuffer + ModBus_para->m_receiveFrameBufferLen + (size_t)MODBUS_BUFFER_SIZE - (pBegin - ModBus_para->m_receiveBufferTmp), (void*)ModBus_para->m_receiveBufferTmp, pEnd - ModBus_para->m_receiveBufferTmp);
+				memcpy(ModBus_para->m_receiveFrameBuffer + ModBus_para->m_receiveFrameBufferLen, pBegin, 
+				        (size_t)MODBUS_BUFFER_SIZE - (pBegin - ModBus_para->m_receiveBufferTmp));
+
+				memcpy(ModBus_para->m_receiveFrameBuffer + ModBus_para->m_receiveFrameBufferLen + (size_t)MODBUS_BUFFER_SIZE - (pBegin - ModBus_para->m_receiveBufferTmp), 
+				        (void*)ModBus_para->m_receiveBufferTmp, pEnd - ModBus_para->m_receiveBufferTmp);
 			}
 			ModBus_para->m_receiveFrameBufferLen += newSize;
 			ModBus_para->m_pBeginReceiveBufferTmp = pEnd;
@@ -525,7 +528,7 @@ static byte ModBus_detectFrame(ModBus_parameter* ModBus_para, size_t* restSize)
 ** GetReponseHandler: Функция обратного вызова для чтения результатов, входящие параметры(uint16_t* buff, uint16_t buffLen)
 ** Возвращает серийный номер команды (больше 0), так что в функции обратного вызова можно определить, какая команда завершена, и не может быть отправлена обратно в 0
 ***/
-byte ModBus_getRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_t count, void(*GetReponseHandler)(uint16_t*, uint16_t))
+uint8_t ModBus_getRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_t count, void(*GetReponseHandler)(uint16_t*, uint16_t))
 {
 	MODBUS_FRAME_T* pFrame = addFrame(ModBus_para);
 	pFrame->type = READ_REGISTER;
@@ -538,11 +541,11 @@ byte ModBus_getRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_
 		pFrame->data[pFrame->size++] = ':';
 	}
 	pFrame->data[pFrame->size++] = ModBus_para->m_address; // Адрес устройства
-	pFrame->data[pFrame->size++] = READ_REGISTER; // Коды функций, чтение регистров
-	pFrame->data[pFrame->size++] = (address >> 8) & 0x0FF; // Регистрация первого адреса в высоком регистре
-	pFrame->data[pFrame->size++] = address & 0x0FF; // Регистрировать первый младший адрес
-	pFrame->data[pFrame->size++] = (count >> 8) & 0x0FF; // Считать старший бит количества регистров
-	pFrame->data[pFrame->size++] = count & 0x0FF; // Считать младший бит количества регистров
+	pFrame->data[pFrame->size++] = READ_REGISTER; // Код функции - чтение регистров
+	pFrame->data[pFrame->size++] = (address >> 8) & 0x0FF; // Старший байт адреса первого регистра
+	pFrame->data[pFrame->size++] = address & 0x0FF; // Младший байт адреса первого регистра
+	pFrame->data[pFrame->size++] = (count >> 8) & 0x0FF; // Старший байт количества запрашиваемых регистров
+	pFrame->data[pFrame->size++] = count & 0x0FF; // Младший байт количества запрашиваемых регистров
 	switch (ModBus_para->m_modeType)
 	{
 	case ASCII:
@@ -550,11 +553,11 @@ byte ModBus_getRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_
 		pFrame->size = bin2char_s(pFrame->data + 1, pFrame->size - 1, MODBUS_BUFFER_SIZE) + 1;
 		pFrame->data[pFrame->size++] = '\r'; // Конечный символ
 		pFrame->data[pFrame->size++] = '\n'; // Конечный символ
-		pFrame->responseSize = 11 + 4 * count; // Количество байтов, необходимых для возврата кадра
+		pFrame->responseSize = 11 + 4 * count; // Количество байт, которые должны быть в ответном кадре
 		break;
 	case RTU:
 		pFrame->size = GenCRC16(pFrame->data, pFrame->size);
-		pFrame->responseSize = 5 + 2 * count; // Количество байтов, необходимых для возврата кадра
+		pFrame->responseSize = 5 + 2 * count; // Количество байт, которые должны быть в ответном кадре
 		break;
 	default:
 		break;
@@ -570,7 +573,7 @@ byte ModBus_getRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_
 ** SetReponseHandler: Функция обратного вызова результата записи, входящие параметры(uint16_t address, uint16_t count), параметры включают первый адрес и количество регистров
 ** Возвращает серийный номер инструкции, чтобы определить, какая команда была завершена в функции обратного вызова
 ***/
-byte ModBus_setRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_t data, void(*SetReponseHandler)(uint16_t, uint16_t))
+uint8_t ModBus_setRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_t data, void(*SetReponseHandler)(uint16_t, uint16_t))
 {
 	MODBUS_FRAME_T* pFrame = addFrame(ModBus_para);
 	pFrame->type = WRITE_SINGLE_REGISTER;
@@ -583,11 +586,11 @@ byte ModBus_setRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_
 		pFrame->data[pFrame->size++] = ':';
 	}
 	pFrame->data[pFrame->size++] = ModBus_para->m_address; // Адрес устройства
-	pFrame->data[pFrame->size++] = WRITE_SINGLE_REGISTER; // Код функции, запись в один регистр
-	pFrame->data[pFrame->size++] = (address >> 8) & 0x0FF; // Зарегистрировать старший бит первого адреса
-	pFrame->data[pFrame->size++] = address & 0x0FF; // Регистрировать первый младший адрес
-	pFrame->data[pFrame->size++] = (data >> 8) & 0x0FF; // Высокий уровень данных
-	pFrame->data[pFrame->size++] = data & 0x0FF; // Низкие данные
+	pFrame->data[pFrame->size++] = WRITE_SINGLE_REGISTER; // Код функции - запись одного регистра
+	pFrame->data[pFrame->size++] = (address >> 8) & 0x0FF; // Старший байт адреса регистра
+	pFrame->data[pFrame->size++] = address & 0x0FF; // Младший байт адреса первого регистра
+	pFrame->data[pFrame->size++] = (data >> 8) & 0x0FF; // Старший байт записываемых данных
+	pFrame->data[pFrame->size++] = data & 0x0FF; // Младший байт записываемых данных
 	switch (ModBus_para->m_modeType)
 	{
 	case ASCII:
@@ -595,11 +598,11 @@ byte ModBus_setRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_
 		pFrame->size = bin2char_s(pFrame->data + 1, pFrame->size - 1, MODBUS_BUFFER_SIZE) + 1;
 		pFrame->data[pFrame->size++] = '\r'; // Конечный символ
 		pFrame->data[pFrame->size++] = '\n'; // Конечный символ
-		pFrame->responseSize = 17; // Возвращает количество байт, требуемое для фрейма
+		pFrame->responseSize = 17; // Количество байт, которые должны быть в ответном кадре
 		break;
 	case RTU:
 		pFrame->size = GenCRC16(pFrame->data, pFrame->size);
-		pFrame->responseSize = 8; // Возвращает количество байт, требуемое для фрейма
+		pFrame->responseSize = 8; // Количество байт, которые должны быть в ответном кадре
 		break;
 	default:
 		break;
@@ -616,7 +619,7 @@ byte ModBus_setRegister(ModBus_parameter* ModBus_para, uint16_t address, uint16_
 ** SetReponseHandler: Функция обратного вызова результата записи, входящие параметры(uint16_t address, uint16_t count), параметры включают в себя первый адрес и количество регистров
 ** Возврат 0 означает успешную отправку, возврат 1 означает занято, но не отправлено
 ***/
-byte ModBus_setRegisters(ModBus_parameter* ModBus_para, uint16_t address, uint16_t* data, uint16_t count, void(*SetReponseHandler)(uint16_t, uint16_t))
+uint8_t ModBus_setRegisters(ModBus_parameter* ModBus_para, uint16_t address, uint16_t* data, uint16_t count, void(*SetReponseHandler)(uint16_t, uint16_t))
 {
 	MODBUS_FRAME_T* pFrame = addFrame(ModBus_para);
 	pFrame->type = WRITE_MULTI_REGISTER;
@@ -681,7 +684,7 @@ byte ModBus_setRegisters(ModBus_parameter* ModBus_para, uint16_t address, uint16
 
 
 // Конец приема данных, обработка данных, возврат 1, если существуют действительные данные, в противном случае возврат 0
-static byte ModBus_parseReveivedBuff(ModBus_parameter* ModBus_para)
+static uint8_t ModBus_parseReveivedBuff(ModBus_parameter* ModBus_para)
 {
 	size_t restSize;
 	MODBUS_FRAME_T* pFrame = NULL;
@@ -707,7 +710,7 @@ static byte ModBus_parseReveivedBuff(ModBus_parameter* ModBus_para)
 	{
 	case READ_REGISTER:
 	{
-		u8 count = ModBus_para->m_receiveFrameBuffer[2];
+		uint8_t count = ModBus_para->m_receiveFrameBuffer[2];
 		MODBUS_DEBUG(("ModBus read reg response\n"));
 		if (count % 2 != 0 || pFrame->type != READ_REGISTER || count != pFrame->count * 2) // Ненормальные данные
 		{
@@ -742,7 +745,7 @@ static byte ModBus_parseReveivedBuff(ModBus_parameter* ModBus_para)
 		MODBUS_DEBUG(("ModBus write 0x%04x %d response\n", address, data));
 		if (ModBus_para->m_modeType == ASCII)
 		{
-			byte data[4];
+			uint8_t data[4];
 			memcpy(data, pFrame->data + 9, 4);
 			char2bin(data, 4);
 			dataSent = ((uint16_t)data[0] << 8) + data[1];
@@ -805,7 +808,7 @@ static byte ModBus_parseReveivedBuff(ModBus_parameter* ModBus_para)
 
 static void sendFrame_loop(ModBus_parameter* ModBus_para)
 {
-	u32 now = millis();
+	uint32_t now = millis();
 	if (ModBus_para->m_waitingResponse && now - ModBus_para->m_lastSentTime < ModBus_para->m_sendTimeout || ModBus_para->m_sendFramesN == 0) // Время ожидания обратного кадра не истекло, или нет данных для отправки
 	{
 		return;
@@ -854,7 +857,7 @@ static void sendFrame_loop(ModBus_parameter* ModBus_para)
 
 void ModBus_Master_loop(ModBus_parameter* ModBus_para)
 {
-	u32 now = millis();
+	uint32_t now = millis();
 
 	if (ModBus_para->m_pBeginReceiveBufferTmp != ModBus_para->m_pEndReceiveBufferTmp)
 	{
@@ -1020,7 +1023,7 @@ static void ModBus_setRegisters_Slave(ModBus_parameter* ModBus_para, uint16_t ad
 }
 
 // Конец приема данных, обработка данных, возвращает 1, если существуют действительные данные, в противном случае возвращает 0
-static byte ModBus_parseReveivedBuff_Slave(ModBus_parameter* ModBus_para)
+static uint8_t ModBus_parseReveivedBuff_Slave(ModBus_parameter* ModBus_para)
 {
 	size_t restSize;
 	if (!ModBus_detectFrame(ModBus_para, &restSize))
@@ -1080,7 +1083,7 @@ static byte ModBus_parseReveivedBuff_Slave(ModBus_parameter* ModBus_para)
 
 void ModBus_Slave_loop(ModBus_parameter* ModBus_para)
 {
-	u32 now = millis();
+	uint32_t now = millis();
 	
 	if (ModBus_para->m_pBeginReceiveBufferTmp != ModBus_para->m_pEndReceiveBufferTmp)
 	{
@@ -1099,13 +1102,13 @@ void ModBus_Slave_loop(ModBus_parameter* ModBus_para)
 #include <stdio.h>
 #include <windows.h>
 ModBus_parameter modBus_master_test, modBus_slave_test;
-int t = 0;
-int millis()
+uint32_t t = 0;
+uint32_t millis()
 {
 	return t;
 }
 
-static void OutputData_master(byte* data, size_t len)
+static void OutputData_master(uint8_t* data, size_t len)
 {
 	int t = millis();
 	switch (modBus_master_test.m_modeType)
@@ -1138,11 +1141,11 @@ static void OutputData_master(byte* data, size_t len)
 
 	for (size_t i = 0; i < len; i++)
 	{
-		ModBus_readByteFromOuter(&modBus_slave_test, data[i]);
+		ModBus_readuint8_tFromOuter(&modBus_slave_test, data[i]);
 	}
 }
 
-static void OutputData_slave(byte* data, size_t len)
+static void OutputData_slave(uint8_t* data, size_t len)
 {
 	switch (modBus_slave_test.m_modeType)
 	{
@@ -1173,7 +1176,7 @@ static void OutputData_slave(byte* data, size_t len)
 
 	for (int i = 0; i < len; i++)
 	{
-		ModBus_readByteFromOuter(&modBus_master_test, data[i]);
+		ModBus_readuint8_tFromOuter(&modBus_master_test, data[i]);
 	}
 }
 
@@ -1246,7 +1249,7 @@ void unit_test()
 		g_registerData[i] = -i;
 	}
 
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 1000; i++)
 	{
 		// Тестовый регистр чтения
 		g_address = 0;
