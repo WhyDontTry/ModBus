@@ -52,7 +52,7 @@
 #endif // DEBUG
 
 #define MODBUS_REGISTER_LIMIT 6 // Максимальное количество регистров чтения и записи одновременно
-#define MODBUS_BUFFER_SIZE ((MODBUS_REGISTER_LIMIT)*4+20) // Максимальная длина пакета данных (длина пакета данных для записи нескольких регистров)
+#define MODBUS_BUFFER_SIZE ((MODBUS_REGISTER_LIMIT)*2 + 20) // Максимальная длина пакета данных (длина пакета данных для записи нескольких регистров)
 #define MODBUS_WAITFRAME_N 5  // Максимальное количество кэшей команд
 #define MODBUS_DEFAULT_BAUD 9600 // Скорость передачи и приема данных по умолчанию, 9600 Бит/с
 
@@ -122,7 +122,7 @@ typedef struct __MODBUS_Parameter {
 	void(*m_SendHandler)(uint8_t*, size_t); // Функция отправки данных, используется для передачи данных на внешние устройства
 
 #ifdef MODBUS_MASTER // Master
-	MODBUS_FRAME_T m_sendFrames[MODBUS_WAITFRAME_N + 2]; // Очередь отправки пакетов
+	MODBUS_FRAME_T m_sendFrames[MODBUS_WAITFRAME_N]; // Очередь отправки пакетов
 	size_t m_sendFramesN; // Длина очереди отправляемых пакетов
 	uint8_t m_nextFrameIndex; // Порядковый номер следующего пакета
 	uint8_t m_waitingResponse; // Ожидание ответного кадра
