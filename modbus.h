@@ -141,7 +141,7 @@ typedef struct __MODBUS_Parameter {
 
 /************ Внешний интерфейс BEGIN ***********/
 void ModBus_setup(ModBus_parameter* ModBus_para, ModBus_Setting_T setting); // Конфигурирование экземпляров ModBus
-void ModBus_readuint8_tFromOuter(ModBus_parameter* ModBus_para, uint8_t receiveduint8_t); // Передача байтовых данных в протокол ModBus
+void ModBus_readbyteFromOuter(ModBus_parameter* ModBus_para, uint8_t receiveduint8_t); // Передача байтовых данных в протокол ModBus
 void ModBus_fastMode(ModBus_parameter* ModBus_para, uint8_t faston); // Следует ли включать режим быстрой команды, быстрый режим не кэширует инструкцию, выключение быстрого режима может гарантировать выполнение инструкции, но может возникнуть задержка
 
 /** Настройка скорости отправки и приема данных **/

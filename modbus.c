@@ -269,7 +269,7 @@ static MODBUS_FRAME_T* addFrame(ModBus_parameter* ModBus_para)
 
 
 // Получение байтовых данных по протоколу ModBus, обычно вызывается в функциях прерывания (например, прерывание приема последовательного порта).
-void ModBus_readuint8_tFromOuter(ModBus_parameter* ModBus_para, uint8_t receiveduint8_t)
+void ModBus_readbyteFromOuter(ModBus_parameter* ModBus_para, uint8_t receiveduint8_t)
 {
 #ifdef _UNIT_TEST
 	printf("address %02x read uint8_t: %02x\n", ModBus_para->m_address, receiveduint8_t);
@@ -1141,7 +1141,7 @@ static void OutputData_master(uint8_t* data, size_t len)
 
 	for (size_t i = 0; i < len; i++)
 	{
-		ModBus_readuint8_tFromOuter(&modBus_slave_test, data[i]);
+		ModBus_readbyteFromOuter(&modBus_slave_test, data[i]);
 	}
 }
 
@@ -1176,7 +1176,7 @@ static void OutputData_slave(uint8_t* data, size_t len)
 
 	for (int i = 0; i < len; i++)
 	{
-		ModBus_readuint8_tFromOuter(&modBus_master_test, data[i]);
+		ModBus_readbyteFromOuter(&modBus_master_test, data[i]);
 	}
 }
 
