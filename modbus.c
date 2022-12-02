@@ -272,7 +272,7 @@ static MODBUS_FRAME_T* addFrame(ModBus_parameter* ModBus_para)
 void ModBus_readbyteFromOuter(ModBus_parameter* ModBus_para, uint8_t receiveduint8_t)
 {
 #ifdef _UNIT_TEST
-	printf("address %02x read uint8_t: %02x\n", ModBus_para->m_address, receiveduint8_t);
+	printf("address %02x read byte: %02x\n", ModBus_para->m_address, receiveduint8_t);
 #endif // _UNIT_TEST
 
 	/*** Значение ModBus_para->m_pBeginReceiveBufferTmp не может быть изменено внутри этой функции!!!!!!!!!!!!!
