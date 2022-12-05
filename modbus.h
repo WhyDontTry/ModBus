@@ -26,6 +26,9 @@
 #define _UNIT_TEST
 //#define DEBUG
 //#define _DELAY_DEBUG
+#include <stdarg.h>
+//#include "../printf.h"
+
 
 #ifdef _UNIT_TEST
 
@@ -40,20 +43,20 @@
 #endif // _UNIT_TEST
 
 #ifdef DEBUG
-#define MODBUS_DEBUG(x) print_controlled x
+#define MODBUS_DEBUG(...) printf (__VA_ARGS__)
 #else
-#define MODBUS_DEBUG(x)  
+#define MODBUS_DEBUG(...) {}
 #endif // DEBUG
 
 #ifdef _DELAY_DEBUG
-#define MODBUS_DELAY_DEBUG(x) print_controlled x
+#define MODBUS_DELAY_DEBUG(...) printf (__VA_ARGS__)
 #else
-#define MODBUS_DELAY_DEBUG(x)  
+#define MODBUS_DELAY_DEBUG(...) {} 
 #endif // DEBUG
 
-#define MODBUS_REGISTER_LIMIT 6 // Максимальное количество регистров чтения и записи одновременно
-#define MODBUS_BUFFER_SIZE ((MODBUS_REGISTER_LIMIT)*2 + 20) // Максимальная длина пакета данных (длина пакета данных для записи нескольких регистров)
-#define MODBUS_WAITFRAME_N 5  // Максимальное количество кэшей команд
+#define MODBUS_REGISTER_LIMIT 50 // Максимальное количество регистров чтения и записи одновременно
+#define MODBUS_BUFFER_SIZE ((MODBUS_REGISTER_LIMIT)* 2 + 20) // Максимальная длина пакета данных (длина пакета данных для записи нескольких регистров)
+#define MODBUS_WAITFRAME_N 3  // Максимальное количество кэшей команд
 #define MODBUS_DEFAULT_BAUD 9600 // Скорость передачи и приема данных по умолчанию, 9600 Бит/с
 
 #include <assert.h>
@@ -63,10 +66,6 @@
 // TODO: функция для получения системного времени в миллисекундах.
 uint32_t millis();
 
-typedef enum {
-	ASCII,
-	RTU
-} MODBUS_MODE_TYPE;
 
 typedef enum {
 	READ_REGISTER = 0x03,
@@ -76,7 +75,6 @@ typedef enum {
 
 typedef struct _MODBUS_SETTING_T { // Тип для конфигурации экземпляра ModBus
 	uint8_t address; // Адрес целевого устройства
-	MODBUS_MODE_TYPE frameType; // Режим работы: ASCII/RTU
 	uint32_t baudRate; // Скорость передачи данных, например 9600 или 115200 и т.д.
 	uint8_t register_access_limit; // Максимальное количество регистров чтения/записи одновременно
 	void(*sendHandler)(uint8_t*, size_t); // Функция, используемая для отправки данных, параметры функции: (uint8_t* data, size_t size), data - адрес массива данных, size - его размер
@@ -88,7 +86,8 @@ typedef struct _MODBUS_FRAME_T {
 	uint8_t size; // Размер данных
 	MODBUS_FUNCTION_TYPE type; // Тип команды
 	uint32_t time; // Время начала выполнения команды
-	void* responseHandler; // Указатель на функцию обратного вызова в конце выполнения инструкции
+    void(*getResponseHandler)(uint16_t*, uint16_t);
+    void(*setResponseHandler)(uint16_t, uint16_t);
 	uint8_t responseSize; // Длина возвращаемого кадра
 	uint16_t address; // Адрес регистра доступа
 	uint8_t count; // Количество регистров доступа
@@ -99,7 +98,6 @@ typedef void(*SetReponseHandler_T)(uint16_t, uint16_t); // Тип указате
 
 typedef struct __MODBUS_Parameter {
 	uint8_t m_address; // Адрес Slave устройства
-	MODBUS_MODE_TYPE m_modeType; // Режим работы протокола: ASCII / RTU
 	uint8_t m_receiveFrameBuffer[MODBUS_BUFFER_SIZE + 2]; // Получение пакетов, выделение двух дополнительных байтов для безопасности
 	size_t m_receiveFrameBufferLen;  // Количество принятых байтов данных
 
@@ -132,8 +130,8 @@ typedef struct __MODBUS_Parameter {
 	uint8_t m_sendFrameBuffer[MODBUS_BUFFER_SIZE];
 	uint8_t m_sendFrameBufferLen;
 
-	size_t(*m_GetRegisterHandler)(uint16_t, uint16_t, uint16_t*); // Функция считывания регистра, параметры функции (первый адрес регистра, количество регистров, считанные данные), возвращает количество успешных считываний
-	size_t(*m_SetRegisterHandler)(uint16_t, uint16_t, uint16_t*); // Установить функцию регистра, параметры функции (адрес регистра, количество записей, записанные данные), вернуть количество успешных установок
+	size_t(*m_GetRegisterHandler)(uint16_t, uint16_t, uint16_t*); // Функция чтения регистров, параметры функции (первый адрес регистра, количество регистров, считанные данные), возвращает количество успешных считываний
+	size_t(*m_SetRegisterHandler)(uint16_t, uint16_t, uint16_t*); // Функция записи регистров, параметры функции (адрес регистра, количество записей, записанные данные), вернуть количество успешных установок
 #endif // MODBUS_SLAVE
 
 
