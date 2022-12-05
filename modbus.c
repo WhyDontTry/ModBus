@@ -499,7 +499,7 @@ static uint8_t ModBus_parseReceivedBuff(ModBus_parameter* ModBus_para)
         // Функция обратного вызова
         if (pFrame->getResponseHandler)
         {
-            (*(GetReponseHandler_T)(pFrame->getResponseHandler))(ModBus_para->m_registerData, count);
+            pFrame->getResponseHandler(ModBus_para->m_registerData, count);
         }
         break;
     }
@@ -524,7 +524,7 @@ static uint8_t ModBus_parseReceivedBuff(ModBus_parameter* ModBus_para)
         // Функция обратного вызова
         if (pFrame->setResponseHandler)
         {
-            (*(SetReponseHandler_T)(pFrame->setResponseHandler))(address, 1);
+            pFrame->setResponseHandler(address, 1);
         }
         break;
     }
@@ -544,7 +544,7 @@ static uint8_t ModBus_parseReceivedBuff(ModBus_parameter* ModBus_para)
         // Функция обратного вызова
         if (pFrame->setResponseHandler)
         {
-            (*(SetReponseHandler_T)(pFrame->setResponseHandler))(address, count);
+            pFrame->setResponseHandler(address, count);
         }
         break;
     }

@@ -93,8 +93,7 @@ typedef struct _MODBUS_FRAME_T {
     uint8_t count; // Количество регистров доступа
 } MODBUS_FRAME_T;
 
-typedef void(*GetReponseHandler_T)(uint16_t*, uint16_t); // Тип указателя функции обратного вызова регистра чтения, параметры функции возврата: (первый адрес буфера значений регистра, количество регистров)
-typedef void(*SetReponseHandler_T)(uint16_t, uint16_t); // Тип указателя функции обратного вызова регистра записи, параметры функции обратного вызова: (адрес регистра, количество записей)
+
 
 typedef struct __MODBUS_Parameter {
     uint8_t m_address; // Адрес Slave устройства
